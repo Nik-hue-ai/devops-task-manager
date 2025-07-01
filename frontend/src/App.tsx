@@ -23,8 +23,10 @@ function App() {
   const [newTask, setNewTask] = useState({ title: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
@@ -68,6 +70,7 @@ function App() {
       if (!response.ok) throw new Error('Failed to create task');
 
       setNewTask({ title: '', description: '' });
+      setShowAddForm(false);
       await fetchTasks();
       await fetchStats();
     } catch (err) {
@@ -109,100 +112,206 @@ function App() {
     }
   };
 
+  const filteredTasks = tasks.filter(task => {
+    if (filter === 'active') return !task.completed;
+    if (filter === 'completed') return task.completed;
+    return true;
+  });
+
+  const localStats = {
+    total: tasks.length,
+    completed: tasks.filter(t => t.completed).length,
+    active: tasks.filter(t => !t.completed).length,
+    completion_rate: tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0
+  };
+
   useEffect(() => {
     fetchTasks();
     fetchStats();
   }, [fetchTasks, fetchStats]);
 
+  if (loading && tasks.length === 0) {
+    return (
+      <div className="app">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <div className="loading-text">Initializing Neural Network...</div>
+          <div className="loading-progress">
+            <div className="progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🚀 AutoDeploy Hub - Task Manager</h1>
-        <p>A complete DevOps pipeline demonstration</p>
+    <div className="app">
+      <div className="background-grid"></div>
+      <div className="floating-particles">
+        {[...Array(20)].map((_, i) => (
+          <div key={i} className="particle" style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 20}s`,
+            animationDuration: `${15 + Math.random() * 10}s`
+          }}></div>
+        ))}
+      </div>
+
+      <header className="app-header">
+        <div className="header-content">
+          <div className="logo-section">
+            <div className="logo-icon">⚡</div>
+            <div className="title-section">
+              <h1 className="main-title">NEXUS TASK</h1>
+              <p className="subtitle">Advanced Task Management System</p>
+            </div>
+          </div>
+          <div className="stats-panel">
+            <div className="stat-item">
+              <span className="stat-value">{localStats.total}</span>
+              <span className="stat-label">Total</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{localStats.active}</span>
+              <span className="stat-label">Active</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{localStats.completed}</span>
+              <span className="stat-label">Complete</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{localStats.completion_rate}%</span>
+              <span className="stat-label">Rate</span>
+            </div>
+          </div>
+        </div>
       </header>
 
-      <main className="App-main">
-        {/* Stats Dashboard */}
-        {stats && (
-          <div className="stats-dashboard">
-            <div className="stat-card">
-              <h3>Total Tasks</h3>
-              <span className="stat-number">{stats.total_tasks}</span>
-            </div>
-            <div className="stat-card">
-              <h3>Completed</h3>
-              <span className="stat-number completed">{stats.completed_tasks}</span>
-            </div>
-            <div className="stat-card">
-              <h3>Pending</h3>
-              <span className="stat-number pending">{stats.pending_tasks}</span>
-            </div>
-            <div className="stat-card">
-              <h3>Completion Rate</h3>
-              <span className="stat-number rate">{stats.completion_rate}%</span>
-            </div>
-          </div>
-        )}
+      {error && (
+        <div className="error-notification">
+          <div className="error-icon">⚠</div>
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="error-close">×</button>
+        </div>
+      )}
 
-        {/* Error Display */}
-        {error && (
-          <div className="error-message">
-            <p>❌ {error}</p>
-            <button onClick={() => setError(null)}>Dismiss</button>
+      <main className="main-content">
+        <div className="control-panel">
+          <div className="filter-tabs">
+            {(['all', 'active', 'completed'] as const).map(filterType => (
+              <button
+                key={filterType}
+                className={`filter-tab ${filter === filterType ? 'active' : ''}`}
+                onClick={() => setFilter(filterType)}
+              >
+                {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
+              </button>
+            ))}
           </div>
-        )}
-
-        {/* Task Creation Form */}
-        <form onSubmit={createTask} className="task-form">
-          <h2>Create New Task</h2>
-          <input
-            type="text"
-            placeholder="Task title..."
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-            required
-          />
-          <textarea
-            placeholder="Task description (optional)..."
-            value={newTask.description}
-            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-            rows={3}
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Task'}
+          <button
+            className="add-task-btn"
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            <span className="btn-icon">+</span>
+            <span>New Task</span>
           </button>
-        </form>
+        </div>
 
-        {/* Tasks List */}
-        <div className="tasks-section">
-          <h2>Tasks ({tasks.length})</h2>
-          {loading && tasks.length === 0 ? (
-            <p>Loading tasks...</p>
-          ) : tasks.length === 0 ? (
-            <p>No tasks yet. Create your first task above!</p>
+        {showAddForm && (
+          <div className="task-form-modal">
+            <div className="modal-backdrop" onClick={() => setShowAddForm(false)}></div>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>Create New Task</h3>
+                <button className="modal-close" onClick={() => setShowAddForm(false)}>×</button>
+              </div>
+              <form onSubmit={createTask} className="task-form">
+                <div className="form-group">
+                  <label htmlFor="title">Task Title</label>
+                  <input
+                    type="text"
+                    id="title"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    placeholder="Enter task title..."
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    placeholder="Enter task description..."
+                    rows={3}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="cancel-btn" onClick={() => setShowAddForm(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="submit-btn" disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Task'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <div className="tasks-container">
+          {filteredTasks.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🎯</div>
+              <h3>No {filter !== 'all' ? filter : ''} tasks found</h3>
+              <p>
+                {filter === 'all'
+                  ? "Create your first task to get started!"
+                  : `No ${filter} tasks at the moment.`
+                }
+              </p>
+            </div>
           ) : (
-            <div className="tasks-list">
-              {tasks.map((task) => (
-                <div key={task.id} className={`task-card ${task.completed ? 'completed' : ''}`}>
+            <div className="tasks-grid">
+              {filteredTasks.map((task, index) => (
+                <div
+                  key={task.id}
+                  className={`task-card ${task.completed ? 'completed' : ''}`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="task-status">
+                    <div className={`status-indicator ${task.completed ? 'complete' : 'pending'}`}></div>
+                  </div>
                   <div className="task-content">
-                    <h3>{task.title}</h3>
-                    {task.description && <p>{task.description}</p>}
-                    <small>
-                      Created: {new Date(task.created_at).toLocaleDateString()}
-                    </small>
+                    <h3 className="task-title">{task.title}</h3>
+                    {task.description && (
+                      <p className="task-description">{task.description}</p>
+                    )}
+                    <div className="task-meta">
+                      <span className="task-date">
+                        {new Date(task.created_at).toLocaleDateString()}
+                      </span>
+                      <span className={`task-badge ${task.completed ? 'complete' : 'pending'}`}>
+                        {task.completed ? 'Complete' : 'Pending'}
+                      </span>
+                    </div>
                   </div>
                   <div className="task-actions">
                     <button
                       onClick={() => toggleTask(task)}
-                      className={task.completed ? 'undo-btn' : 'complete-btn'}
+                      className={`action-btn toggle-btn ${task.completed ? 'complete' : 'pending'}`}
+                      title={task.completed ? 'Mark as incomplete' : 'Mark as complete'}
                     >
-                      {task.completed ? '↶ Undo' : '✓ Complete'}
+                      {task.completed ? '✓' : '○'}
                     </button>
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="delete-btn"
+                      className="action-btn delete-btn"
+                      title="Delete task"
                     >
-                      🗑️ Delete
+                      ×
                     </button>
                   </div>
                 </div>
@@ -211,10 +320,6 @@ function App() {
           )}
         </div>
       </main>
-
-      <footer className="App-footer">
-        <p>Built with React + Flask + Docker + Kubernetes + CI/CD</p>
-      </footer>
     </div>
   );
 }
