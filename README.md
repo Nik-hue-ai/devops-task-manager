@@ -1,6 +1,6 @@
-# 🚀 AutoDeploy Hub
+# 🚀 DevOps Task Manager
 
-A complete DevOps pipeline demonstration with microservices, containerization, CI/CD, and monitoring.
+A comprehensive full-stack application demonstrating modern DevOps practices with Docker, monitoring, and automated deployment. **Currently deployed and fully operational!**
 
 ## 🏗️ Architecture
 
@@ -36,6 +36,17 @@ A complete DevOps pipeline demonstration with microservices, containerization, C
 - **Monitoring**: Prometheus + Grafana
 - **Testing**: pytest, Jest
 
+## 🎯 Current Status
+
+✅ **FULLY DEPLOYED AND OPERATIONAL**
+
+All services are running and accessible:
+- **Frontend**: http://localhost:3000 (Task Management UI)
+- **Backend API**: http://localhost:5000 (REST API)
+- **Grafana**: http://localhost:3001 (admin/admin)
+- **Prometheus**: http://localhost:9090 (Metrics)
+- **Database**: localhost:5432 (PostgreSQL)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -47,7 +58,7 @@ A complete DevOps pipeline demonstration with microservices, containerization, C
 ### Local Development
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/Nik-hue-ai/devops-task-manager.git
 cd AutoDeploy-Hub
 
 # Start all services
