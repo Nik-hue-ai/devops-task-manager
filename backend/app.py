@@ -16,8 +16,8 @@ CORS(app)
 # Prometheus metrics
 metrics = PrometheusMetrics(app)
 
-# Database configuration
-database_url = os.environ.get('DATABASE_URL', 'postgresql://user:password@localhost:5432/autodeploy_db')
+# Database configuration - using SQLite for demo
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///autodeploy.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -48,7 +48,7 @@ def health_check():
     """Health check endpoint for monitoring"""
     try:
         # Test database connection
-        db.session.execute('SELECT 1')
+        db.session.execute(db.text('SELECT 1'))
         return jsonify({
             'status': 'healthy',
             'timestamp': datetime.utcnow().isoformat(),
@@ -155,14 +155,17 @@ def get_stats():
         return jsonify({'error': 'Failed to fetch statistics'}), 500
 
 # Initialize database
-@app.before_first_request
 def create_tables():
-    db.create_all()
-    logger.info("Database tables created")
+    with app.app_context():
+        db.create_all()
+        logger.info("Database tables created")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
-    
+
+    # Initialize database tables
+    create_tables()
+
     logger.info(f"Starting Flask app on port {port}")
     app.run(host='0.0.0.0', port=port, debug=debug)

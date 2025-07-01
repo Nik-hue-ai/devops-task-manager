@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 interface Task {
@@ -24,10 +24,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
   // Fetch tasks
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE}/api/tasks`);
@@ -39,10 +39,10 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE]);
 
   // Fetch stats
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/api/stats`);
       if (!response.ok) throw new Error('Failed to fetch stats');
@@ -51,7 +51,7 @@ function App() {
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
-  };
+  }, [API_BASE]);
 
   // Create task
   const createTask = async (e: React.FormEvent) => {
@@ -112,7 +112,7 @@ function App() {
   useEffect(() => {
     fetchTasks();
     fetchStats();
-  }, []);
+  }, [fetchTasks, fetchStats]);
 
   return (
     <div className="App">

@@ -6,7 +6,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    postgresql-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
@@ -24,17 +24,17 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder stage
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /root/.local /home/app/.local
 
 # Copy application code
 COPY . .
 
 # Create non-root user
-RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
+RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app && chown -R app:app /home/app/.local
 USER app
 
 # Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/home/app/.local/bin:$PATH
 
 # Expose port
 EXPOSE 5000
